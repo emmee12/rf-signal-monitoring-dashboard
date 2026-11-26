@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RF Signal Monitoring & Diagnostics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #f43f5e;
+      --warn: #f59e0b;
+      --pass: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+    }
+    .container { max-width: 1180px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 1.6rem; font-weight: 800; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    select {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .kpi-label { color: var(--muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; }
+    .kpi-value { font-size: 1.9rem; font-weight: 800; margin-top: 0.35rem; color: var(--accent); }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .chart-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .chart-box h2 { font-size: 1.05rem; margin-bottom: 1rem; color: var(--text); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th, td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { background: #162033; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+    .pass { background: rgba(16, 185, 129, 0.15); color: var(--pass); }
+    .warn { background: rgba(245, 158, 11, 0.15); color: var(--warn); }
+    .fail { background: rgba(244, 63, 94, 0.15); color: var(--danger); }
+    @media (max-width: 820px) { .charts-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>📡 RF Signal Monitoring & Diagnostics Dashboard</h1>
+        <p class="subtitle">Public Safety P25 Radio Telemetry • AWS S3 / Glue / Athena Analytics Simulation</p>
+      </div>
+      <div>
+        <select id="facilityFilter">
+          <option value="ALL">All Inspected Facilities (6)</option>
+          <option value="Montgomery County High School A">Montgomery County High School A</option>
+          <option value="Prince George's Municipal Center">Prince George's Municipal Center</option>
+          <option value="Howard County General Wing B">Howard County General Wing B</option>
+          <option value="Anne Arundel Transit Hub">Anne Arundel Transit Hub</option>
+          <option value="Bethesda Metro Underground Concourse">Bethesda Metro Underground Concourse</option>
+          <option value="College Park Campus Arena">College Park Campus Arena</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Field Readings</div>
+        <div class="kpi-value" id="kpiReadings">5,000</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Mean Signal Strength (RSSI)</div>
+        <div class="kpi-value" id="kpiRssi">-84.6 dBm</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Mean Audio Quality (DAQ)</div>
+        <div class="kpi-value" id="kpiDaq">3.62 / 5.0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">NFPA Compliance Pass Rate</div>
+        <div class="kpi-value" id="kpiPass">82.4%</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h2>Average RSSI (dBm) by Building Zone</h2>
+        <canvas id="rssiChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h2>Signal Compliance Breakdown</h2>
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Facility</th>
+          <th>Building Zone</th>
+          <th>Avg RSSI</th>
+          <th>Avg DAQ</th>
+          <th>Pass Rate</th>
+          <th>Diagnostic Status</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const DATA = [
+      { facility: "Montgomery County High School A", zone: "Lobby / Ground Floor", readings: 310, rssi: -76.2, daq: 4.3, passRate: 98.4 },
+      { facility: "Montgomery County High School A", zone: "Basement / Mechanical", readings: 295, rssi: -96.4, daq: 2.6, passRate: 41.2 },
+      { facility: "Prince George's Municipal Center", zone: "2nd Floor Corridor", readings: 340, rssi: -75.8, daq: 4.4, passRate: 99.1 },
+      { facility: "Prince George's Municipal Center", zone: "Stairwell North", readings: 280, rssi: -87.9, daq: 3.4, passRate: 86.5 },
+      { facility: "Howard County General Wing B", zone: "Lobby / Ground Floor", readings: 320, rssi: -77.1, daq: 4.2, passRate: 97.8 },
+      { facility: "Howard County General Wing B", zone: "Elevator Core", readings: 265, rssi: -97.8, daq: 2.4, passRate: 36.8 },
+      { facility: "Anne Arundel Transit Hub", zone: "2nd Floor Corridor", readings: 330, rssi: -76.5, daq: 4.3, passRate: 98.0 },
+      { facility: "Anne Arundel Transit Hub", zone: "Basement / Mechanical", readings: 290, rssi: -95.2, daq: 2.8, passRate: 48.0 },
+      { facility: "Bethesda Metro Underground Concourse", zone: "Basement / Mechanical", readings: 410, rssi: -98.9, daq: 2.2, passRate: 28.5 },
+      { facility: "Bethesda Metro Underground Concourse", zone: "Stairwell North", readings: 360, rssi: -94.1, daq: 2.9, passRate: 54.2 },
+      { facility: "College Park Campus Arena", zone: "Lobby / Ground Floor", readings: 350, rssi: -74.9, daq: 4.5, passRate: 99.4 },
+      { facility: "College Park Campus Arena", zone: "Elevator Core", readings: 275, rssi: -93.6, daq: 3.0, passRate: 61.0 }
+    ];
+
+    let rssiChart, statusChart;
+
+    function updateDashboard(selectedFacility) {
+      const filtered = selectedFacility === "ALL"
+        ? DATA
+        : DATA.filter(d => d.facility === selectedFacility);
+
+      const totalReadings = filtered.reduce((sum, d) => sum + d.readings, 0);
+      const avgRssi = (filtered.reduce((sum, d) => sum + d.rssi, 0) / filtered.length).toFixed(1);
+      const avgDaq = (filtered.reduce((sum, d) => sum + d.daq, 0) / filtered.length).toFixed(2);
+      const avgPass = (filtered.reduce((sum, d) => sum + d.passRate, 0) / filtered.length).toFixed(1);
+
+      document.getElementById("kpiReadings").textContent = totalReadings.toLocaleString();
+      document.getElementById("kpiRssi").textContent = `${avgRssi} dBm`;
+      document.getElementById("kpiDaq").textContent = `${avgDaq} / 5.0`;
+      document.getElementById("kpiPass").textContent = `${avgPass}%`;
+
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = filtered.map(row => {
+        const badgeClass = row.passRate >= 90 ? "pass" : row.passRate >= 70 ? "warn" : "fail";
+        const badgeText = row.passRate >= 90 ? "COMPLIANT" : row.passRate >= 70 ? "MARGINAL" : "BDA REQUIRED";
+        return `
+          <tr>
+            <td>${row.facility}</td>
+            <td>${row.zone}</td>
+            <td>${row.rssi} dBm</td>
+            <td>${row.daq}</td>
+            <td>${row.passRate}%</td>
+            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          </tr>
+        `;
+      }).join("");
+
+      const zones = ["Lobby / Ground Floor", "2nd Floor Corridor", "Stairwell North", "Elevator Core", "Basement / Mechanical"];
+      const zoneRssi = zones.map(z => {
+        const matches = filtered.filter(d => d.zone === z);
+        return matches.length ? (matches.reduce((s, m) => s + m.rssi, 0) / matches.length).toFixed(1) : null;
+      });
+
+      if (rssiChart) rssiChart.destroy();
+      rssiChart = new Chart(document.getElementById("rssiChart"), {
+        type: "bar",
+        data: {
+          labels: zones,
+          datasets: [{
+            label: "Mean RSSI (dBm)",
+            data: zoneRssi,
+            backgroundColor: "#38bdf8",
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { suggestedMin: -105, suggestedMax: -65, ticks: { color: "#94a3b8" } },
+            x: { ticks: { color: "#94a3b8" } }
+          }
+        }
+      });
+
+      const passCount = filtered.filter(d => d.passRate >= 90).length;
+      const warnCount = filtered.filter(d => d.passRate >= 70 && d.passRate < 90).length;
+      const failCount = filtered.filter(d => d.passRate < 70).length;
+
+      if (statusChart) statusChart.destroy();
+      statusChart = new Chart(document.getElementById("statusChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Compliant Pass", "Marginal Warning", "Critical Dead Zone"],
+          datasets: [{
+            data: [passCount, warnCount, failCount],
+            backgroundColor: ["#10b981", "#f59e0b", "#f43f5e"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          plugins: { legend: { labels: { color: "#f8fafc" } } }
+        }
+      });
+    }
+
+    document.getElementById("facilityFilter").addEventListener("change", (e) => {
+      updateDashboard(e.target.value);
+    });
+
+    updateDashboard("ALL");
+  </script>
+</body>
+</html>
