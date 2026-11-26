@@ -3,102 +3,330 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RF Signal Monitoring & Diagnostics Dashboard</title>
+  <title>RF Signal Telemetry &amp; Compliance Diagnostics | Emi-Noel Epolle-Njabe</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Playfair+Display:ital,wght@0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --danger: #f43f5e;
-      --warn: #f59e0b;
-      --pass: #10b981;
+      --bg-body: #fdfbf7;
+      --bg-surface: #faf6f0;
+      --bg-elevated: #f3ece1;
+      --border: #e5d7c6;
+      --border-strong: #d3c0aa;
+
+      --text-main: #28201f;
+      --text-muted: #6e625f;
+
+      --primary: #db7093;
+      --primary-dark: #b85274;
+      --primary-tint: rgba(219, 112, 147, 0.1);
+
+      --pass: #2e6f56;
+      --pass-bg: rgba(46, 111, 86, 0.11);
+      --warn: #a6631b;
+      --warn-bg: rgba(166, 99, 27, 0.12);
+      --fail: #b43648;
+      --fail-bg: rgba(180, 54, 72, 0.12);
+
+      --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 2rem;
+      font-family: var(--font-sans);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.55;
+      padding: 2.25rem 1.5rem 4rem;
     }
-    .container { max-width: 1180px; margin: 0 auto; }
-    header {
+
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+
+    /* Top Breadcrumb Bar */
+    .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
+      padding-bottom: 1rem;
       margin-bottom: 2rem;
-      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--text-muted);
     }
-    h1 { font-size: 1.6rem; font-weight: 800; }
-    .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
-    select {
-      background: var(--surface);
-      color: var(--text);
+
+    .back-link {
+      color: var(--primary-dark);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    .spec-pill {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--bg-elevated);
       border: 1px solid var(--border);
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      color: var(--text-main);
     }
-    .kpi-grid {
+
+    /* Editorial Header */
+    header {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2rem;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 2rem;
+      align-items: end;
+      margin-bottom: 2.25rem;
     }
-    .kpi-card {
-      background: var(--surface);
+
+    .eyebrow {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary-dark);
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-size: 2.15rem;
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 500;
+      color: var(--primary);
+    }
+
+    .lead {
+      margin-top: 0.65rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 640px;
+    }
+
+    .filter-box {
+      background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 1.25rem;
+      padding: 1rem;
     }
-    .kpi-label { color: var(--muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; }
-    .kpi-value { font-size: 1.9rem; font-weight: 800; margin-top: 0.35rem; color: var(--accent); }
+
+    .filter-box label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
+    }
+
+    select {
+      width: 100%;
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Telemetry Summary Strip */
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .metric-cell {
+      padding: 1.35rem 1.5rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .metric-cell:last-child { border-right: none; }
+
+    .metric-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0.35rem 0 0.2rem;
+    }
+
+    .metric-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Charts Layout */
     .charts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.35fr 0.65fr;
       gap: 1.5rem;
       margin-bottom: 2rem;
     }
-    .chart-box {
-      background: var(--surface);
+
+    .panel {
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 1.5rem;
     }
-    .chart-box h2 { font-size: 1.05rem; margin-bottom: 1rem; color: var(--text); }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.15rem;
+      gap: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .panel-note {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--primary-dark);
+    }
+
+    /* Diagnostic Table */
+    .table-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .table-header-bar {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      background: var(--surface);
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
     }
-    th, td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-    th { background: #162033; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
-    .badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
-    .pass { background: rgba(16, 185, 129, 0.15); color: var(--pass); }
-    .warn { background: rgba(245, 158, 11, 0.15); color: var(--warn); }
-    .fail { background: rgba(244, 63, 94, 0.15); color: var(--danger); }
-    @media (max-width: 820px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    th, td {
+      padding: 0.85rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(219, 112, 147, 0.04); }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 0.22rem 0.65rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .pass { background: var(--pass-bg); color: var(--pass); }
+    .warn { background: var(--warn-bg); color: var(--warn); }
+    .fail { background: var(--fail-bg); color: var(--fail); }
+
+    footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 880px) {
+      header, .charts-grid { grid-template-columns: 1fr; }
+      .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+      .metric-cell:nth-child(2) { border-right: none; }
+      .metric-cell:nth-child(1), .metric-cell:nth-child(2) { border-bottom: 1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="top-bar">
+      <a href="https://emmee12.github.io/portfolio/" class="back-link">&larr; Return to Emi-Noel Epolle-Njabe ePortfolio</a>
+      <span class="spec-pill">P25 700/800 MHz • Threshold: RSSI &ge; -95.0 dBm &amp; DAQ &ge; 3.0</span>
+    </div>
+
     <header>
       <div>
-        <h1>📡 RF Signal Monitoring & Diagnostics Dashboard</h1>
-        <p class="subtitle">Public Safety P25 Radio Telemetry • AWS S3 / Glue / Athena Analytics Simulation</p>
+        <div class="eyebrow">Public Safety Network Telemetry • Artifact I</div>
+        <h1>RF Signal Monitoring &amp; <span>Zone Diagnostics</span></h1>
+        <p class="lead">
+          Post-ETL diagnostic view of simulated emergency responder radio field tests across six Maryland public facilities. Processed via Python Pandas and modeled for AWS S3, Glue, and Athena querying.
+        </p>
       </div>
-      <div>
+
+      <div class="filter-box">
+        <label for="facilityFilter">Inspect Facility Site</label>
         <select id="facilityFilter">
-          <option value="ALL">All Inspected Facilities (6)</option>
+          <option value="ALL">All Inspected Facilities (6 Sites)</option>
           <option value="Montgomery County High School A">Montgomery County High School A</option>
           <option value="Prince George's Municipal Center">Prince George's Municipal Center</option>
           <option value="Howard County General Wing B">Howard County General Wing B</option>
@@ -109,49 +337,71 @@
       </div>
     </header>
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Total Field Readings</div>
-        <div class="kpi-value" id="kpiReadings">5,000</div>
+    <section class="metrics-strip" aria-label="Telemetry Summary Metrics">
+      <div class="metric-cell">
+        <div class="metric-title">Field Test Points</div>
+        <div class="metric-val" id="kpiReadings">5,000</div>
+        <div class="metric-sub">Grid &amp; critical-area logs</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Mean Signal Strength (RSSI)</div>
-        <div class="kpi-value" id="kpiRssi">-84.6 dBm</div>
+      <div class="metric-cell">
+        <div class="metric-title">Mean Downlink RSSI</div>
+        <div class="metric-val" id="kpiRssi">-86.3 dBm</div>
+        <div class="metric-sub">Target floor: -95.0 dBm</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Mean Audio Quality (DAQ)</div>
-        <div class="kpi-value" id="kpiDaq">3.62 / 5.0</div>
+      <div class="metric-cell">
+        <div class="metric-title">Mean Audio Quality</div>
+        <div class="metric-val" id="kpiDaq">3.54 DAQ</div>
+        <div class="metric-sub">Target minimum: 3.00 DAQ</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">NFPA Compliance Pass Rate</div>
-        <div class="kpi-value" id="kpiPass">82.4%</div>
+      <div class="metric-cell">
+        <div class="metric-title">Zone Pass Rate</div>
+        <div class="metric-val" id="kpiPass">74.6%</div>
+        <div class="metric-sub">Meets public safety SLA</div>
       </div>
-    </div>
+    </section>
 
-    <div class="charts-grid">
-      <div class="chart-box">
-        <h2>Average RSSI (dBm) by Building Zone</h2>
-        <canvas id="rssiChart"></canvas>
+    <section class="charts-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Mean Signal Attenuation by Building Zone</h2>
+          <span class="panel-note">Dashed line = -95 dBm fail cutoff</span>
+        </div>
+        <canvas id="rssiChart" height="145"></canvas>
       </div>
-      <div class="chart-box">
-        <h2>Signal Compliance Breakdown</h2>
-        <canvas id="statusChart"></canvas>
-      </div>
-    </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Facility</th>
-          <th>Building Zone</th>
-          <th>Avg RSSI</th>
-          <th>Avg DAQ</th>
-          <th>Pass Rate</th>
-          <th>Diagnostic Status</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Zone Compliance Split</h2>
+          <span class="panel-note">NFPA 1225 Criteria</span>
+        </div>
+        <canvas id="statusChart" height="220"></canvas>
+      </div>
+    </section>
+
+    <section class="table-panel">
+      <div class="table-header-bar">
+        <h2 class="panel-title">Facility &amp; Zone Field Audit Log</h2>
+        <span class="panel-note" id="rowCountLabel">Showing 12 tested zones</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Facility</th>
+            <th>Building Zone</th>
+            <th>Samples</th>
+            <th>Mean RSSI</th>
+            <th>Mean DAQ</th>
+            <th>Pass Rate</th>
+            <th>Engineering Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </section>
+
+    <footer>
+      Engineered by Emi-Noel Epolle-Njabe • Synthetic P25 Telemetry Dataset for Portfolio Demonstration
+    </footer>
   </div>
 
   <script>
@@ -172,6 +422,24 @@
 
     let rssiChart, statusChart;
 
+    // Draw horizontal -95 dBm threshold line on bar chart
+    const thresholdPlugin = {
+      id: 'thresholdLine',
+      afterDatasetsDraw(chart) {
+        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+        const yPos = y.getPixelForValue(-95);
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#b43648';
+        ctx.moveTo(left, yPos);
+        ctx.lineTo(right, yPos);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
     function updateDashboard(selectedFacility) {
       const filtered = selectedFacility === "ALL"
         ? DATA
@@ -184,21 +452,23 @@
 
       document.getElementById("kpiReadings").textContent = totalReadings.toLocaleString();
       document.getElementById("kpiRssi").textContent = `${avgRssi} dBm`;
-      document.getElementById("kpiDaq").textContent = `${avgDaq} / 5.0`;
+      document.getElementById("kpiDaq").textContent = `${avgDaq} DAQ`;
       document.getElementById("kpiPass").textContent = `${avgPass}%`;
+      document.getElementById("rowCountLabel").textContent = `Showing ${filtered.length} tested zone${filtered.length === 1 ? '' : 's'}`;
 
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = filtered.map(row => {
         const badgeClass = row.passRate >= 90 ? "pass" : row.passRate >= 70 ? "warn" : "fail";
-        const badgeText = row.passRate >= 90 ? "COMPLIANT" : row.passRate >= 70 ? "MARGINAL" : "BDA REQUIRED";
+        const badgeText = row.passRate >= 90 ? "PASS • NO ACTION" : row.passRate >= 70 ? "MONITOR • MARGINAL" : "FAIL • BDA REQUIRED";
         return `
           <tr>
-            <td>${row.facility}</td>
+            <td><strong>${row.facility}</strong></td>
             <td>${row.zone}</td>
-            <td>${row.rssi} dBm</td>
-            <td>${row.daq}</td>
-            <td>${row.passRate}%</td>
-            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td class="mono">${row.readings}</td>
+            <td class="mono">${row.rssi.toFixed(1)} dBm</td>
+            <td class="mono">${row.daq.toFixed(1)}</td>
+            <td class="mono">${row.passRate.toFixed(1)}%</td>
+            <td><span class="status-pill ${badgeClass}">${badgeText}</span></td>
           </tr>
         `;
       }).join("");
@@ -206,26 +476,48 @@
       const zones = ["Lobby / Ground Floor", "2nd Floor Corridor", "Stairwell North", "Elevator Core", "Basement / Mechanical"];
       const zoneRssi = zones.map(z => {
         const matches = filtered.filter(d => d.zone === z);
-        return matches.length ? (matches.reduce((s, m) => s + m.rssi, 0) / matches.length).toFixed(1) : null;
+        return matches.length ? Number((matches.reduce((s, m) => s + m.rssi, 0) / matches.length).toFixed(1)) : null;
+      });
+
+      const barColors = zoneRssi.map(val => {
+        if (val === null) return "transparent";
+        return val <= -95 ? "#b43648" : val <= -88 ? "#c98236" : "#db7093";
       });
 
       if (rssiChart) rssiChart.destroy();
       rssiChart = new Chart(document.getElementById("rssiChart"), {
         type: "bar",
+        plugins: [thresholdPlugin],
         data: {
-          labels: zones,
+          labels: ["Lobby", "2nd Floor", "Stairwell", "Elevator Core", "Basement"],
           datasets: [{
             label: "Mean RSSI (dBm)",
             data: zoneRssi,
-            backgroundColor: "#38bdf8",
-            borderRadius: 6
+            backgroundColor: barColors,
+            borderRadius: 5,
+            barThickness: 36
           }]
         },
         options: {
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` Mean RSSI: ${ctx.raw} dBm`
+              }
+            }
+          },
           scales: {
-            y: { suggestedMin: -105, suggestedMax: -65, ticks: { color: "#94a3b8" } },
-            x: { ticks: { color: "#94a3b8" } }
+            y: {
+              min: -105,
+              max: -65,
+              grid: { color: "#eadecf" },
+              ticks: { color: "#6e625f", font: { family: "JetBrains Mono", size: 11 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: "#28201f", font: { family: "Plus Jakarta Sans", weight: "600", size: 12 } }
+            }
           }
         }
       });
@@ -238,15 +530,26 @@
       statusChart = new Chart(document.getElementById("statusChart"), {
         type: "doughnut",
         data: {
-          labels: ["Compliant Pass", "Marginal Warning", "Critical Dead Zone"],
+          labels: ["Compliant (≥90%)", "Marginal (70–89%)", "BDA Required (<70%)"],
           datasets: [{
             data: [passCount, warnCount, failCount],
-            backgroundColor: ["#10b981", "#f59e0b", "#f43f5e"],
-            borderWidth: 0
+            backgroundColor: ["#2e6f56", "#c98236", "#b43648"],
+            borderColor: "#faf6f0",
+            borderWidth: 3
           }]
         },
         options: {
-          plugins: { legend: { labels: { color: "#f8fafc" } } }
+          cutout: "66%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                color: "#28201f",
+                padding: 14,
+                font: { family: "Plus Jakarta Sans", size: 12, weight: "600" }
+              }
+            }
+          }
         }
       });
     }
